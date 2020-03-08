@@ -1,3 +1,4 @@
+from TexSoup import TexSoup
 from TexSoup.utils import TokenWithPosition
 from tests.config import chikin
 import re
@@ -13,7 +14,7 @@ if chikin:
 
 def test_navigation_attributes(chikin):
     """Test navigation with attributes by dot notation"""
-    assert str(chikin.section) == '\section{Chikin Tales}'
+    assert str(chikin.section) == r'\section{Chikin Tales}'
     assert chikin.section.name == 'section'
     assert chikin.section.string == 'Chikin Tales'
 
@@ -43,10 +44,10 @@ def test_navigation_positions(chikin):
     assert chikin.char_pos_to_line(1) == (0, 1), 'documentclass'
     assert chikin.char_pos_to_line(172) == (11, 6), 'waddle'
 
-    assert isinstance(next(next(chikin.itemize.children).tokens), TokenWithPosition)
+    assert isinstance(next(next(chikin.itemize.children).contents), TokenWithPosition)
 
     # get position of first token
-    waddle_pos = next(next(chikin.itemize.children).tokens).position
+    waddle_pos = next(next(chikin.itemize.children).contents).position
     assert chikin.char_pos_to_line(waddle_pos) == (11, 6)
 
     # get position of item
@@ -72,9 +73,15 @@ def test_find_basic(chikin):
 def test_find_by_command(chikin):
     """Find all LaTeX blocks that match a command"""
     sections = list(chikin.find_all('section'))
-    assert str(sections[0]) == '\section{Chikin Tales}'
-    assert str(sections[1]) == '\section{Chikin Scream}'
+    assert str(sections[0]) == r'\section{Chikin Tales}'
+    assert str(sections[1]) == r'\section{Chikin Scream}'
 
+
+def test_find_env():
+    """Find all equations in the document"""
+    soup = TexSoup(r"""\begin{equation}1+1\end{equation}""")
+    equations = soup.find_all(r'\begin{equation}')
+    assert len(list(equations)) > 0
 
 ################
 # MODIFICATION #
@@ -87,29 +94,50 @@ def test_delete(chikin):
     assert 'Chikin Tales' not in str(chikin)
 
 
+def test_delete_arg():
+    """Delete an element from an arg in the parse tree"""
+    soup = TexSoup(r'\foo{\bar{\baz}}')
+    soup.bar.delete()
+
+
+def test_delete_token():
+    """Delete TokenWithPosition"""
+    soup = TexSoup(r"""
+    \section{one}
+    text
+    \section{two}
+    delete me""")
+
+    assert 'delete me' in str(soup)
+    for node in soup.all:
+        if 'delete me' in node:
+            node.delete()
+    assert 'delete me' not in str(soup)
+
+
 def test_replace_single(chikin):
     """Replace an element in the parse tree"""
-    chikin.section.replace(chikin.subsection)
+    chikin.section.replace_with(chikin.subsection)
     assert 'Chikin Tales' not in str(chikin)
     assert len(list(chikin.find_all('subsection'))) == 4
 
 
 def test_replace_multiple(chikin):
     """Replace an element in the parse tree"""
-    chikin.section.replace(chikin.subsection, chikin.subsection)
+    chikin.section.replace_with(chikin.subsection, chikin.subsection)
     assert 'Chikin Tales' not in str(chikin)
     assert len(list(chikin.find_all('subsection'))) == 5
 
 
-def test_add_children(chikin):
+def test_append(chikin):
     """Add a child to the parse tree"""
-    chikin.section.add_children('asdfghjkl')
-    assert 'asdfghjkl' in str(chikin.section)
+    chikin.itemize.append('asdfghjkl')
+    assert 'asdfghjkl' in str(chikin.itemize)
 
 
-def test_add_children_at(chikin):
+def test_insert(chikin):
     """Add a child to the parse tree at a specific position"""
-    chikin.add_children_at(0, 'asdfghjkl')
+    chikin.insert(0, 'asdfghjkl')
     assert 'asdfghjkl' in str(chikin)
     assert str(chikin[0]) == 'asdfghjkl'
 
@@ -117,6 +145,7 @@ def test_add_children_at(chikin):
 #########
 # TEXT #
 ########
+
 def test_text(chikin):
     """Get text of document"""
     text = list(chikin.text)

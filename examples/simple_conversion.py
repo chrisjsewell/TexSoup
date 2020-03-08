@@ -24,18 +24,18 @@ def to_dictionary(tex_tree):
             str_tree.append(
                 {
                     i.name: [
-                        {"begin": i.begin + str(i.arguments)},
-                        to_dictionary(i.everything),
+                        {"begin": i.begin + str(i.args)},
+                        to_dictionary(i.all),
                         {"end": i.end},
                     ]
                 }
             )
         elif isinstance(i, TexSoup.TexCmd):
-            str_tree.append({i.name: "\\" + i.name + str(i.arguments)})
-        elif isinstance(i, TexSoup.TokenWithPosition):
+            str_tree.append({i.name: "\\" + i.name + str(i.args)})
+        elif isinstance(i, TexSoup.TexText):
             str_tree.append(str(i.text))
         elif isinstance(i, TexSoup.Arg):
-            str_tree.append(["{", to_dictionary(TexSoup.TexSoup(i.value).expr.everything), "}"])
+            str_tree.append(["{", to_dictionary(TexSoup.TexSoup(i.value).expr.all), "}"])
         else:
             str_tree.append(str(i))
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     tex_path = input('LaTex file:').strip()
     tex_text = open(tex_path).read()
-    tex_dict = {"latex": {"contents": to_dictionary(TexSoup.TexSoup(tex_text).expr.everything)}}
+    tex_dict = {"latex": {"contents": to_dictionary(TexSoup.TexSoup(tex_text).expr.all)}}
 
     new_path = ".".join(tex_path.split(".")[:-1]) + "__tmp.json"
     json.dump(tex_dict, open(new_path, "x"), indent="  ")

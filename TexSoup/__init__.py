@@ -3,7 +3,7 @@ a LaTeX string or file handler to obtain a parse tree with navigation, search,
 and modification utilities.
 """
 
-__version__ = '0.1.4'
+__version__ = '0.2.0'
 
 from TexSoup.tex import *
 
@@ -57,7 +57,7 @@ def TexSoup(tex_code):
     red lemon & uncommon \\ \n
     life & common
     \end{tabular}
-    >>> soup.tabular.args[0]
+    >>> soup.tabular.args[0].value
     'c c'
     >>> soup.itemize
     \begin{itemize}
@@ -75,8 +75,8 @@ def TexSoup(tex_code):
     >>> soup.textbf.delete()
     >>> 'Hello' not in repr(soup)
     True
-    >>> soup.textit.replace('S')
-    >>> soup.textit.replace('U', 'P')
+    >>> soup.textit.replace_with('S')
+    >>> soup.textit.replace_with('U', 'P')
     >>> soup
     SOUP
     """
